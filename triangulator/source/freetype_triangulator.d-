@@ -1,0 +1,125 @@
+module freetype_triangulator;
+
+
+void init()
+{
+    //
+    FT_Raster_Funcs rasterFuncs;
+    rasterFuncs.glyph_format    = FT_GLYPH_FORMAT_OUTLINE; // FT_Glyph_Format
+    rasterFuncs.raster_new      = &_raster_new;            // FT_Raster_NewFunc
+    rasterFuncs.raster_reset    = &_raster_reset;          // FT_Raster_ResetFunc
+    rasterFuncs.raster_set_mode = &_raster_set_mode;       // FT_Raster_SetModeFunc
+    rasterFuncs.raster_render   = &_raster_render;         // FT_Raster_RenderFunc
+    rasterFuncs.raster_done     = &_raster_done;           // FT_Raster_DoneFunc
+
+    //
+    FT_Renderer_Class rendererCls;
+    rendererCls.root.module_flags     = null; // FT_ULong
+    rendererCls.root.module_size      = FT_Renderer_Class.sizeof; // FT_Long
+    rendererCls.root.module_name      = "triangulator"; // const FT_String*
+    rendererCls.root.module_version   = 0x010000; // FT_Fixed
+    rendererCls.root.module_requires  = 0x020000; // FT_Fixed
+    rendererCls.root.module_interface = null; // const void*
+    rendererCls.root.module_init      = &_module_init; // FT_Module_Constructor
+    rendererCls.root.module_done      = &_module_done; // FT_Module_Destructor
+    rendererCls.root.get_interface    = &_get_interface; // FT_Module_Requester
+    rendererCls.glyph_format    = FT_GLYPH_FORMAT_OUTLINE;
+    rendererCls.render_glyph    = &_render_glyph;    // FT_Renderer_RenderFunc
+    rendererCls.transform_glyph = &_transform_glyph; // FT_Renderer_TransformFunc
+    rendererCls.get_glyph_cbox  = &_get_glyph_cbox;  // FT_Renderer_GetCBoxFunc
+    rendererCls.set_mode        = &_set_mode;        // FT_Renderer_SetModeFunc
+    rendererCls.raster_class    = &rasterFuncs;      // FT_Raster_Funcs*
+
+    auto err = 
+        FT_Add_Module( 
+            ft, 
+            &rendererCls
+        ); // calls ft_add_renderer( module );
+/*
+    auto module = // FT_ModuleRec
+        FT_Get_Module(
+            ft,
+            rendererCls.root.name 
+        );
+
+
+    auto renderer = 
+        FT_Get_Renderer( 
+            ft,
+            FT_GLYPH_FORMAT_OUTLINE 
+        );
+
+    err =
+        FT_Set_Renderer( 
+            ft,
+            renderer,
+            0,
+            null 
+        );
+*/
+}
+
+//
+FT_Error _module_init( FT_Module module )
+{
+    return SUCCESS;
+}
+
+void _module_done( FT_Module module )
+{
+    //
+}
+
+FT_Module_Interface _get_interface( FT_Module mofule, const(char)* a )
+{
+    return null;
+}
+
+//
+extern(C) nothrow:
+FT_Error _render_glyph( FT_Renderer renderer, FT_GlyphSlot slot, FT_Render_Mode mode, const(FT_Vector)* origin )
+{
+    return SUCCESS;
+}
+
+FT_Error _transform_glyph( FT_Renderer renderer, FT_GlyphSlot slot, const(FT_Matrix)* matrix, const(FT_Vector)* origin )
+{
+    return SUCCESS;
+}
+
+void _get_glyph_cbox( FT_Renderer renderer, FT_GlyphSlot slot, FT_BBox* box )
+{
+    //
+}
+
+FT_Error _set_mode( FT_Renderer renderer, FT_ULong mode , FT_Pointer ptr )
+{
+    return SUCCESS;
+}
+
+//
+extern(C) nothrow:
+int _raster_new( void*, FT_Raster* raster )
+{
+    return 0;
+}
+
+void _raster_reset( FT_Raster rester, ubyte* a, uint b )
+{
+    //
+}
+
+int _raster_set_mode( FT_Raster raster, uint a , void* b )
+{
+    return 0;
+}
+
+int _raster_render( FT_Raster raster, FT_Raster_Params* params )
+{
+    return 0;
+}
+
+void _raster_done( FT_Raster raster )
+{
+    //
+}

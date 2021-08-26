@@ -1,0 +1,20 @@
+{
+	"name"        : "examples_text",
+	"description" : "A minimal D application.",
+	"copyright"   : "Copyright © 2021, Vitaliy Fadeev",
+	"authors"     : [ "Vitaliy Fadeev" ],
+	"license"     : "GPL3",
+    "targetType"  : "executable",
+    "configurations": 
+    [
+        {
+            "name"        : "linux-gl3-freetype",
+            "platforms"   : [ "linux" ],
+			"dependencies":
+			{
+                "ui:window" : { "path" : "../.." },
+                "ui:text"   : { "path" : "../.." },
+			}
+		},
+	]
+}

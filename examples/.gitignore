@@ -1,0 +1,30 @@
+# Compiled Object files
+*.o
+*.obj
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.a
+*.lib
+
+# Executables
+*.exe
+fonts-list/fonts-list
+line-gl3/line-gl3
+triangle-gl3/triangle-gl3
+text-gl3-freetype/text-gl3-freetype
+window-glfw/window-glfw
+
+# DUB
+.dub
+docs.json
+__dummy.html
+docs/
+dub.selections.json
+
+# Code coverage
+*.lst

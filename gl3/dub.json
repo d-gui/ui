@@ -1,0 +1,22 @@
+{
+	"name"        : "gl3",
+	"description" : "D library, GL3 functions",
+	"copyright"   : "Copyright © 2021, Vitaliy Fadeev",
+	"authors"     : [ "Vitaliy Fadeev" ],
+	"license"     : "GPL3",
+    "targetType"  : "library",
+    "configurations": 
+    [
+        {
+            "name"              : "linux",
+            "platforms"         : [ "linux" ],
+            "stringImportPaths" : [ "source/ui/shaders" ],
+			"dependencies":
+			{
+	            "bindbc-loader" : { "path" : "../deps/bindbc-loader" },
+                "bindbc-opengl" : { "path" : "../deps/bindbc-opengl" }
+			},
+			"versions"    : [ "GL3", "GL_33" ],
+		}
+	]
+}

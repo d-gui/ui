@@ -1,0 +1,20 @@
+{
+	"name"        : "fonts",
+	"description" : "D application, quering OS fonts",
+	"copyright"   : "Copyright © 2021, Vitaliy Fadeev",
+	"authors"     : [ "Vitaliy Fadeev" ],
+	"license"     : "GPL3",
+    "targetType"  : "library",
+    "configurations": 
+    [
+        {
+            "name"         : "linux",
+            "platforms"    : [ "linux" ],
+			"dependencies" :
+			{
+	            "fontconfig" : { "path" : "../deps/fontcofig-d" }
+			},
+			"versions"    : [ "FontConfig" ],
+		},
+	]
+}

@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/fill
+fill.so
+fill.dylib
+fill.dll
+fill.a
+fill.lib
+fill-test-*
+*.exe
+*.o
+*.obj
+*.lst

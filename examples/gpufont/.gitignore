@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/gpufont
+gpufont.so
+gpufont.dylib
+gpufont.dll
+gpufont.a
+gpufont.lib
+gpufont-test-*
+*.exe
+*.o
+*.obj
+*.lst

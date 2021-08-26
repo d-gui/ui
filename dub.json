@@ -1,0 +1,26 @@
+{
+    "authors"     : [ "Vitaliy Fadeev" ],
+    "copyright"   : "Copyright © 2021, Vitaliy Fadeev",
+    "description" : "A minimal D application.",
+    "license"     : "GPL3",
+    "name"        : "ui",
+    "targetType"  : "none",
+    "subPackages" : 
+    [
+        "gl3",
+        "glfw",
+        "app",
+        "window",
+        "line",
+        "triangle",
+        "fonts",
+
+        "examples/window",
+        "examples/line",
+        "examples/triangle",
+        "examples/fill",
+        "examples/fonts_list",
+        "examples/gpufont",
+        "examples/text",
+    ]
+}

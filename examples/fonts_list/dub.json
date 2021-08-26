@@ -1,0 +1,21 @@
+{
+	"name"        : "examples_fonts_list",
+	"description" : "A minimal D application.",
+	"copyright"   : "Copyright © 2021, Vitaliy Fadeev",
+	"authors"     : [ "Vitaliy Fadeev" ],
+	"license"     : "proprietary",
+    "targetType"  : "executable",
+    "configurations": 
+    [
+        {
+            "name"        : "linux-fontconfig",
+            "platforms"   : [ "linux" ],
+			"dependencies":
+			{
+                "ui:fonts"   : { "path" : "../.." },
+			},
+			"versions"   : [ "FontConfig" ],
+			"buildOptions2" : [ "betterC" ]
+		},
+	]
+}

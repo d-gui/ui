@@ -1,0 +1,3 @@
+[submodule "example/line-gl3/deps/window"]
+	path = example/line-gl3/deps/window
+	url = git@github.com:d-gui/window.git

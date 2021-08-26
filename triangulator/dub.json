@@ -1,0 +1,31 @@
+{
+	"name"        : "triangulator",
+	"description" : "D library, triangulator",
+	"copyright"   : "Copyright © 2021, Vitaliy Fadeev",
+	"authors"     : [ "Vitaliy Fadeev" ],
+	"license"     : "GPL3",
+    "targetType"  : "executable",
+    "configurations": 
+    [
+        {
+            "name"        : "linux",
+            "platforms"   : [ "linux" ],
+			"dependencies" :
+			{
+	            "bindbc-loader"   : { "path": "../deps/bindbc-loader" },,
+	            "bindbc-freetype" : { "path": "../deps/bindbc-freetype" },
+                "earcutd"         : "*",
+                "dvector"         : "*",
+	            "bc-string"       : "*",
+	            "ui:fonts"           : { "path" : ".." },
+                "ui:window"          : { "path" : ".." },
+                "ui:line"            : { "path" : ".." },
+                "ui:triangle"        : { "path" : ".." },
+			},
+			"versions"   : [ "FontConfig", "FreeType", "FT_210" ],
+			"subConfiguration": {
+				"bindbc-freetype": "dynamicBC"
+			} 
+		},
+	]
+}

@@ -1,0 +1,21 @@
+{
+	"name"        : "examples_window",
+	"description" : "A minimal D application.",
+	"copyright"   : "Copyright © 2021, Vitaliy Fadeev",
+	"authors"     : [ "Vitaliy Fadeev" ],
+	"license"     : "GPL3",
+    "targetType"  : "executable",
+    "configurations": 
+    [
+        {
+            "name"        : "linux-glfw",
+            "platforms"   : [ "linux" ],
+			"dependencies":
+			{
+                "ui:window"  : { "path": "../.." },
+                "ui:gl3"     : { "path": "../.." }
+			},
+			"versions"    : [ "GLFW", "GL3" ],
+		},
+	]
+}

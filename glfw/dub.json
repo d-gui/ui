@@ -1,0 +1,21 @@
+{
+	"name"        : "glfw",
+	"description" : "D library, GL3 functions",
+	"copyright"   : "Copyright © 2021, Vitaliy Fadeev",
+	"authors"     : [ "Vitaliy Fadeev" ],
+	"license"     : "GPL3",
+    "targetType"  : "library",
+    "configurations": 
+    [
+        {
+            "name"              : "linux",
+            "platforms"         : [ "linux" ],
+			"dependencies":
+			{
+	            "bindbc-loader" : { "path" : "../deps/bindbc-loader" },
+                "bindbc-glfw"   : { "path" : "../deps/bindbc-glfw" }
+			},
+			"versions"    : [ "GLFW" ],
+		}
+	]
+}

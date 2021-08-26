@@ -1,0 +1,23 @@
+{
+	"name"        : "examples_gpufont",
+	"description" : "A minimal D application.",
+	"copyright"   : "Copyright © 2021, Vitaliy Fadeev",
+	"authors"     : [ "Vitaliy Fadeev" ],
+	"license"     : "GPL3",
+    "targetType"  : "executable",
+    "configurations": 
+    [
+        {
+            "name"        : "linux-gl3-derelict",
+            "platforms"   : [ "linux" ],
+			"dependencies":
+			{
+                "ui:app"    : { "path" : "../.." },
+                "ui:gl3"    : { "path" : "../.." },
+                "ui:line"   : { "path" : "../.." },
+			},
+			"versions" : [ "GL_33" ],
+			"libs" : [ "glu" ]
+		},
+	]
+}
