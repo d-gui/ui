@@ -35,8 +35,6 @@ template App( alias InitFunc, alias DrawFrameFunc )
 
             InitFunc( this );
 
-            loadShaders();
-            
             defaultEventLoop();
         }
 
@@ -66,5 +64,7 @@ void defaultInitFunc( T )( ref T app )
     debug writeln( __FUNCTION__ );
 
     deps.gl3.loadOpenGL();
+
+    loadShaders();
 }
 
