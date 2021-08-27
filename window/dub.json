@@ -13,7 +13,6 @@
 			"dependencies":
 			{
 	            "ui:glfw" : { "path" : ".." },
-		        "ui:gl3"  : { "path" : ".." }
 			},
 			"versions"    : [ "GLFW", "GL3" ],
 		}

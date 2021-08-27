@@ -1,9 +1,9 @@
 {
-    "authors"     : [ "Vitaliy Fadeev" ],
-    "copyright"   : "Copyright © 2021, Vitaliy Fadeev",
-    "description" : "A minimal D application.",
-    "license"     : "GPL3",
     "name"        : "ui",
+    "description" : "A minimal D application.",
+    "copyright"   : "Copyright © 2021, Vitaliy Fadeev",
+    "authors"     : [ "Vitaliy Fadeev" ],
+    "license"     : "GPL3",
     "targetType"  : "none",
     "subPackages" : 
     [
