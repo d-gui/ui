@@ -1,16 +1,69 @@
-module ui.triangle;
+module ui.lines;
 
 version ( GL3 ):
 import deps.gl3;
 import ui.shaders  : linearShader;
 import ui.vertex   : LinearVertex;
 import ui.glerrors : checkGlError;
+import std.math    : round;
+import std.stdio : writeln;
 
 
-void drawTriangle( T )( T x, T y, T x2, T y2, T x3, T y3, uint rgba )
-  if ( is( T == int ) || is( T == uint ) || is( T == long ) || is( T == ulong ) )
+struct Vec2i
 {
-    drawTriangle( x, y, x2, y2, x3, y3,
+    int x;
+    int y;
+
+    Vec2i opBinary( string op : "+" )( Vec2i b )
+    {
+        return 
+            Vec2i(
+                x + b.x,
+                y + b.y
+            );
+    }
+
+    Vec2i opBinary( string op : "-" )( Vec2i b )
+    {
+        return 
+            Vec2i(
+                x - b.x,
+                y - b.y
+            );
+    }
+}
+
+alias Point = Vec2i;
+
+
+struct Line
+{
+    Point a;
+    Point b;
+
+    auto x( int y )
+    {
+        // x = k*y + shift; 
+        // k = ( x - shift ) / y;
+        // shift = x - k*y; 
+        // shift = x; // y = 0
+        auto nb = b - a;
+
+        auto shiftb = a.x;
+
+        auto kb = ( cast( float ) nb.x / nb.y );
+        auto x = cast( int ) round( kb * (y - a.y) + shiftb );
+
+        return x;
+    }
+}
+
+
+
+
+void drawLines( Line[] lines, uint rgba )
+{
+    drawLines( lines, 
         ( rgba >> 24 ) & 0xFF,
         ( rgba >> 16 ) & 0xFF,
         ( rgba >>  8 ) & 0xFF,
@@ -18,8 +71,7 @@ void drawTriangle( T )( T x, T y, T x2, T y2, T x3, T y3, uint rgba )
     );
 }
 
-void drawTriangle( T )( T x, T y, T x2, T y2, T x3, T y3, ubyte r, ubyte g, ubyte b, ubyte a )
-  if ( is( T == int ) || is( T == uint ) || is( T == long ) || is( T == ulong ) )
+void drawLines( Line[] lines, ubyte r, ubyte g, ubyte b, ubyte a )
 {
     int viewportWidth  = 800;
     int viewportHeight = 600;
@@ -28,40 +80,44 @@ void drawTriangle( T )( T x, T y, T x2, T y2, T x3, T y3, ubyte r, ubyte g, ubyt
 
     //
     pragma( inline, true )
-    auto deviceX( T windowedX )
+    auto deviceX( int windowedX )
     {
         return ( cast( GLfloat ) windowedX - windowedViewportCenterX ) / viewportWidth * 2;
     }
 
     pragma( inline, true )
-    auto deviceY( T windowedY )
+    auto deviceY( int windowedY )
     {
         return -( cast( GLfloat ) windowedY - windowedViewportCenterY ) / viewportHeight * 2;
     }
 
     //
-    GLfloat GL_x = deviceX( x );
-    GLfloat GL_y = deviceY( y );
-
-    GLfloat GL_x2 = deviceX( x2 );
-    GLfloat GL_y2 = deviceY( y2 );
-
-    GLfloat GL_x3 = deviceX( x3 );
-    GLfloat GL_y3 = deviceY( y3 );
-
-    //printf( "x,  y  : %d, %d\n", x,  y );
-    //printf( "x2, y2 : %d, %d\n", x2, y2 );
-    //printf( "x,  y  : %f, %f\n", GL_x,  GL_y );
-    //printf( "x2, y2 : %f, %f\n", GL_x2, GL_y2 );
-
-    //
     alias TVertex = LinearVertex;
-    TVertex[3] vertices =
-    [
-        TVertex( GL_x,  GL_y,  cast( GLfloat ) r/255, cast( GLfloat ) g/255, cast( GLfloat ) b/255, cast( GLfloat ) a/255 ), // start
-        TVertex( GL_x2, GL_y2, cast( GLfloat ) r/255, cast( GLfloat ) g/255, cast( GLfloat ) b/255, cast( GLfloat ) a/255 ), // end
-        TVertex( GL_x3, GL_y3, cast( GLfloat ) r/255, cast( GLfloat ) g/255, cast( GLfloat ) b/255, cast( GLfloat ) a/255 ), // end
-    ];
+    TVertex[] vertices;
+    vertices.reserve( lines.length * 2 );
+
+    foreach ( line; lines )
+    {
+        vertices ~= 
+            TVertex(
+                deviceX( line.a.x ),
+                deviceY( line.a.y ),
+                cast( GLfloat ) r/255, 
+                cast( GLfloat ) g/255, 
+                cast( GLfloat ) b/255, 
+                cast( GLfloat ) a/255
+            );
+
+        vertices ~= 
+            TVertex(
+                deviceX( line.b.x ),
+                deviceY( line.b.y ),
+                cast( GLfloat ) r/255, 
+                cast( GLfloat ) g/255, 
+                cast( GLfloat ) b/255, 
+                cast( GLfloat ) a/255
+            );
+    }
 
     // Init code
     //auto vao = VAO( vertices );
@@ -83,6 +139,11 @@ void drawTriangle( T )( T x, T y, T x2, T y2, T x3, T y3, ubyte r, ubyte g, ubyt
         vertices.ptr, 
         /*usage hint*/ GL_STATIC_DRAW 
     ); checkGlError( "glBufferData" );
+
+    // Projection
+    // mat3 projection_2D{ { sx, 0.f, 0.f },{ 0.f, sy, 0.f },{ tx, ty, 1.f } }; // affine transformation as introduced in the prev. lecture
+    // GLint projection_uloc = glGetUniformLocation( texmesh.effect.program, "projection" );
+    // glUniformMatrix3fv( projection_uloc, 1, GL_FALSE, cast(float*) &projection );
 
     // Describe array
     int aPosition = glGetAttribLocation( linearShader, "aPosition" );
@@ -107,7 +168,6 @@ void drawTriangle( T )( T x, T y, T x2, T y2, T x3, T y3, ubyte r, ubyte g, ubyt
         cast( void* ) TVertex.r.offsetof
     ); checkGlError( "glVertexAttribPointer 2" );
 
-
     // Drawing code (in render loop)
     // Style
     glUseProgram( linearShader ); checkGlError( "glUseProgram" );
@@ -116,7 +176,7 @@ void drawTriangle( T )( T x, T y, T x2, T y2, T x3, T y3, ubyte r, ubyte g, ubyt
     glBindVertexArray( vao ); checkGlError( "glBindVertexArray" );
 
     // Draw
-    glDrawArrays( GL_TRIANGLES, /*first*/ 0, /*count*/ cast( int ) vertices.length ); checkGlError( "glDrawArrays" );
+    glDrawArrays( GL_LINES, /*first*/ 0, /*count*/ cast( int ) vertices.length ); checkGlError( "glDrawArrays" );
 
     // Free
     glBindBuffer( GL_ARRAY_BUFFER, 0 );
@@ -126,4 +186,12 @@ void drawTriangle( T )( T x, T y, T x2, T y2, T x3, T y3, ubyte r, ubyte g, ubyt
     glUseProgram( 0 );
     glDeleteBuffers( 1, &vbo );
     glDeleteVertexArrays( 1, &vao );
+
+    //
+    // shader.use();
+    // shader.color = color;
+    // shader.array = vertices;
+    //
+    // draw
+    //
 }

@@ -71,7 +71,12 @@ void drawLine( int x, int y, int x2, int y2, ubyte r, ubyte g, ubyte b, ubyte a 
     glBindBuffer( GL_ARRAY_BUFFER, vbo ); checkGlError( "glBindBuffer" );
 
     // Upload data to GPU
-    glBufferData( GL_ARRAY_BUFFER, vertices.sizeof, vertices.ptr, /*usage hint*/ GL_STATIC_DRAW ); checkGlError( "glBufferData" );
+    glBufferData( 
+        GL_ARRAY_BUFFER, 
+        TVertex.sizeof * vertices.length, 
+        vertices.ptr, 
+        /*usage hint*/ GL_STATIC_DRAW 
+    ); checkGlError( "glBufferData" );
 
     // Projection
     // mat3 projection_2D{ { sx, 0.f, 0.f },{ 0.f, sy, 0.f },{ tx, ty, 1.f } }; // affine transformation as introduced in the prev. lecture
