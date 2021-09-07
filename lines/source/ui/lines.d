@@ -8,11 +8,15 @@ import ui.glerrors : checkGlError;
 import std.math    : round;
 import std.stdio : writeln;
 
+alias INDEX = size_t;
+alias COORD = int;
+alias COLOR = uint;
+
 
 struct Vec2i
 {
-    int x;
-    int y;
+    COORD x;
+    COORD y;
 
     Vec2i opBinary( string op : "+" )( Vec2i b )
     {
@@ -41,7 +45,7 @@ struct Line
     Point a;
     Point b;
 
-    auto x( int y )
+    auto x( COORD y )
     {
         // x = k*y + shift; 
         // k = ( x - shift ) / y;
@@ -52,10 +56,50 @@ struct Line
         auto shiftb = a.x;
 
         auto kb = ( cast( float ) nb.x / nb.y );
-        auto x = cast( int ) round( kb * (y - a.y) + shiftb );
+        auto x = cast( COORD ) round( kb * (y - a.y) + shiftb );
 
         return x;
     }
+
+    // bezie quadratic curve
+    auto quadraticX( COORD y )
+    {
+        auto x = y;
+        return x;
+    }
+}
+
+
+struct XXLine
+{
+    COORD  x1; 
+    COORD  x2; 
+    COORD  y; 
+    size_t nextIndex; // index in buffer
+
+    pragma( inline, true )
+    auto a()
+    {
+        return Point( x1, y );
+    }
+
+    pragma( inline, true )
+    auto b()
+    {
+        return Point( x2, y );
+    }
+
+    //auto toVertex( TVertex )( COLOR color )
+    //{
+    //    return TVertex( x1, y, x2, y, color );
+    //}
+}
+
+
+struct XXLines
+{
+    XXLine[] lines;
+    alias lines this;
 }
 
 
@@ -71,7 +115,20 @@ void drawLines( Line[] lines, uint rgba )
     );
 }
 
-void drawLines( Line[] lines, ubyte r, ubyte g, ubyte b, ubyte a )
+void drawLines( XXLines lines, uint rgba )
+{
+    drawLines( lines, 
+        ( rgba >> 24 ) & 0xFF,
+        ( rgba >> 16 ) & 0xFF,
+        ( rgba >>  8 ) & 0xFF,
+        ( rgba       ) & 0xFF 
+    );
+}
+
+//void drawLines( T )( T lines, ubyte r, ubyte g, ubyte b, ubyte a )
+//  if ( is( T == Line[] ) || is ( T == XXLines ) )
+void drawLines( T )( T lines, ubyte r, ubyte g, ubyte b, ubyte a )
+  if ( is( T == Line[] ) || is ( T == XXLines ) )
 {
     int viewportWidth  = 800;
     int viewportHeight = 600;
@@ -98,25 +155,52 @@ void drawLines( Line[] lines, ubyte r, ubyte g, ubyte b, ubyte a )
 
     foreach ( line; lines )
     {
-        vertices ~= 
-            TVertex(
-                deviceX( line.a.x ),
-                deviceY( line.a.y ),
-                cast( GLfloat ) r/255, 
-                cast( GLfloat ) g/255, 
-                cast( GLfloat ) b/255, 
-                cast( GLfloat ) a/255
-            );
+        static if ( is ( T == Line[] ) )
+        {
+            vertices ~= 
+                TVertex(
+                    deviceX( line.a.x ),
+                    deviceY( line.a.y ),
+                    cast( GLfloat ) r/255, 
+                    cast( GLfloat ) g/255, 
+                    cast( GLfloat ) b/255, 
+                    cast( GLfloat ) a/255
+                );
 
-        vertices ~= 
-            TVertex(
-                deviceX( line.b.x ),
-                deviceY( line.b.y ),
-                cast( GLfloat ) r/255, 
-                cast( GLfloat ) g/255, 
-                cast( GLfloat ) b/255, 
-                cast( GLfloat ) a/255
-            );
+            vertices ~= 
+                TVertex(
+                    deviceX( line.b.x ),
+                    deviceY( line.b.y ),
+                    cast( GLfloat ) r/255, 
+                    cast( GLfloat ) g/255, 
+                    cast( GLfloat ) b/255, 
+                    cast( GLfloat ) a/255
+                );
+        }
+
+        // Optimized for multiple lines
+        else // if ( is ( T == XXLines ) )
+        {
+            vertices ~= 
+                TVertex(
+                    deviceX( line.x1 ),
+                    deviceY( line.y ),
+                    cast( GLfloat ) r/255, 
+                    cast( GLfloat ) g/255, 
+                    cast( GLfloat ) b/255, 
+                    cast( GLfloat ) a/255
+                );
+
+            vertices ~= 
+                TVertex(
+                    deviceX( line.x2 ),
+                    deviceY( line.y ),
+                    cast( GLfloat ) r/255, 
+                    cast( GLfloat ) g/255, 
+                    cast( GLfloat ) b/255, 
+                    cast( GLfloat ) a/255
+                );
+        }
     }
 
     // Init code

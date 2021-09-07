@@ -5,15 +5,14 @@ import core.stdc.stdlib : exit;
 import ui.app           : App;
 import ui.line          : drawLine;
 import ui.lines         : drawLines;
-import ui.lines         : Line, Vec2i, Point;
+import ui.lines         : Line, Vec2i, Point, XXLine, XXLines, INDEX, COORD, COLOR;
 import ui.glerrors      : checkGlError;
 import std.range;
 import std.math;
 import std.stdio : writeln;
+import std.algorithm : sort;
+import std.algorithm : each;
 
-alias INDEX = size_t;
-alias COORD = int;
-alias COLOR = uint;
 
 int main( string[] args ) 
 {
@@ -95,10 +94,36 @@ void drawFrame( T )( ref T window )
 		Vec2i( 300, 265 ), // left
 	];
 
+	// Glyph A
+	Polygon glyphA =
+	[
+		// A
+		Vec2i( 260,  98 ), // top
+		Vec2i( 377, 432 ), 
+		Vec2i( 335, 435 ), 
+		Vec2i( 335, 435 ), 
+		Vec2i( 303, 335 ), 
+		Vec2i( 175, 335 ), 
+		Vec2i( 143, 434 ), 
+		Vec2i(  99, 432 ), 
+		Vec2i( 217,  98 ),
+	];
+
+	Polygon glyphAhole =
+	[
+		// Hole
+		Vec2i( 237, 141 ), // top
+		Vec2i( 291, 299 ), 
+		Vec2i( 185, 299 ), 
+	];
+
 
 	//auto polygon = triangle;
+	//auto polygon = hexagon1;
 	//auto polygon = hexagon2;
-	auto polygon = star;
+	//auto polygon = star;
+	auto polygon = glyphA;
+	auto polygonHole = glyphAhole;
 
 	//drawLine( 100, 300, 700, 300, 0xFF, 0xFF, 0xFF, 0xFF );
 	drawPolygon( polygon, 0xFFFFFFFF );
@@ -106,7 +131,8 @@ void drawFrame( T )( ref T window )
 	// fill polygon
 	//fillPolygon( polygon, 0xFFFFFFFF );
 	//VPolygon( polygon ).fill( 0xFFFFFFFF );
-	VPolygon2( polygon ).fill( 0xFFFFFFFF );
+	//VPolygon2( polygon ).fill( 0xFFFFFFFF );
+	VPolygon3( polygon, polygonHole ).fill( 0xFFFFFFFF );
 }
 
 
@@ -288,21 +314,10 @@ void fillPolygon( T )( T vertices, uint color )
 }
 
 
+// Fill via Cut
 struct VPolygon2
 {
 	Polygon polygon;
-
-	struct XX
-	{
-		COORD x1; 
-		COORD x2; 
-	}
-
-	struct Buff
-	{
-		XX[] lines;
-		alias lines this;
-	}
 
 	enum DIR
 	{
@@ -332,9 +347,6 @@ struct VPolygon2
 		//     Update left x 
 
 
-		Buff[] buffers;
-		buffers.length = 1;
-
 		// get max, min y
 		COORD maxy; INDEX maxyi;
 		COORD miny; INDEX minyi;
@@ -354,33 +366,31 @@ struct VPolygon2
 			}
 		}
 
-		//buf = buffers.front;
-		//buf.lines.length = maxyi - minyi;
-		auto b = 0;
-		buffers[ b ].lines.length = maxy - miny + 1;
+		XXLines xxlines;
+		xxlines.reserve( ( maxy - miny ) * 4 );
 
+		xxlines.length = maxy - miny + 1;
+
+		// scan points + first point as pairs: ( pre, cur )
 		foreach ( ref pp; chain( polygon.vertices, [ polygon.vertices[0] ] ).slide( 2 ) )
 		{
-			auto prevp = pp[0];
-			auto p     = pp[1];
+			auto pre = pp[0];
+			auto cur = pp[1];
 
-			DIR dir;
-			if ( p.y > prevp.y )
-				dir = DIR.DOWN;
-			else
-				dir = DIR.UP;
-
-			auto line = Line( prevp, p );
+			DIR dir =
+				( cur.y > pre.y ) ?
+					DIR.DOWN :
+					DIR.UP ;
 
 			// up-down
-			auto fromy = prevp.y;
-			auto toy   = p.y + 1;
+			auto fromy = pre.y;
+			auto toy   = cur.y;
 
 			// down-up do swap
-			if ( prevp.y > p.y )
+			if ( pre.y > cur.y )
 			{
-				fromy = p.y;
-				toy   = prevp.y + 1;
+				fromy = cur.y;
+				toy   = pre.y;
 			}
 
 			foreach ( y; iota( fromy, toy ) )
@@ -391,41 +401,204 @@ struct VPolygon2
 				//   update x1
 				if ( dir == DIR.DOWN )
 				{
-					auto idx = y - miny;
-					buffers[ b ][ idx ].x2 = line.x( y );
+					size_t idx = y - miny;
+
+					auto xx = &xxlines[ idx ];
+					auto x  = Line( pre, cur ).x( y );
+
+					// first pass
+					L_check:
+					if ( xx.x1 == 0 && xx.x2 == 0 )
+					{
+						xx.x2 = x;
+						xx.y  = y;
+					}
+
+					// 2nd pass, ...
+					else
+					{
+						// add line in next block
+						if ( xx.nextIndex == 0 )
+						{
+							xxlines ~= XXLine( 0, x, y );
+							xx.nextIndex = xxlines.length-1;
+						}
+
+						// go and check next block
+						else
+						{
+							idx = xx.nextIndex;
+							xx = &xxlines[ idx ];
+							goto L_check;
+						}
+					}
 				}
+
+				// DIR.UP
 				else
 				{
-					auto idx = y - miny;
-					buffers[ b ][ idx ].x1 = line.x( y );
+					size_t idx = y - miny;
+
+					auto xx = &xxlines[ idx ];
+					auto x  = Line( pre, cur ).x( y );
+
+					// x between x1, x2
+					L_next:
+					if ( x.between( xx.x1, xx.x2 ) )
+					{
+						xx.x1 = x;
+					}
+
+					// check next block
+					else
+					{
+						idx = xx.nextIndex;
+						xx = &xxlines[ idx ];
+						goto L_next;
+					}
 				}
 			}
 		}
 
-		// fill
-		// array for draw
-		Line[] lines;
-		lines.reserve( buffers[b].lines.length );
-		auto y = miny;
-		foreach ( ref xx; buffers[b].lines )
+		// draw
+		drawLines( xxlines, color );
+	}
+}
+
+
+// Fill via Scanline
+struct VPolygon3
+{
+	Polygon polygon;
+	Polygon hole;
+
+	enum FLAGS
+	{
+		NONE = 0b0000_0000,
+		DOWN = 0b0000_0001,
+		HOLE = 0b0000_0010
+	}
+
+	struct SCLine
+	{
+		Line  line;
+		alias line this;
+		FLAGS flags;
+	}
+
+	void fill( COLOR color )
+	{
+		// get max, min y
+		COORD maxy; INDEX maxyi;
+		COORD miny; INDEX minyi;
+
+		foreach ( i, ref p; polygon.vertices )
 		{
-			//scanline = 
-			//	Line( 
-			//		Vec2i( ab.x( y ), y ), 
-			//		Vec2i( ac.x( y ), y ) 
-			//	);
+			if ( p.y > maxy )
+			{
+				maxy  = p.y;
+				maxyi = i;
+			}
 
-			lines ~= Line( 
-				Point( xx.x1, y ),
-				Point( xx.x2, y ), 
-			);
+			if ( p.y < miny )
+			{
+				miny  = p.y;
+				minyi = i;
+			}
+		}
 
-			y += 1;
-		}	
+		//
+		SCLine[] lines;
+		lines.reserve( polygon.vertices.length );
+
+		Line[] alines;
+		alines.reserve( polygon.vertices.length );
+
+		// create lines
+		// scan points as pairs: ( pre, cur )
+		foreach ( ref pp; chain( polygon.vertices, [ polygon.vertices.front ] ).slide( 2 ) )
+		{
+			auto pre = pp[0];
+			auto cur = pp[1];
+
+			//
+			if ( cur.y > pre.y )
+				lines ~= SCLine( Line( pre, cur ), FLAGS.DOWN );
+			else
+				lines ~= SCLine( Line( cur, pre ), FLAGS.NONE );
+		}
+
+		foreach ( ref pp; chain( hole.vertices, [ hole.vertices.front ] ).slide( 2 ) )
+		{
+			auto pre = pp[0];
+			auto cur = pp[1];
+
+			//
+			if ( cur.y > pre.y )
+				lines ~= SCLine( Line( pre, cur ), FLAGS.HOLE | FLAGS.DOWN );
+			else
+				lines ~= SCLine( Line( cur, pre ), FLAGS.HOLE );
+		}
+
+		// sort
+		lines.sort!"a.line.a.y < b.line.a.y";
+
+		// fill
+		size_t a = 0;
+		size_t b = lines.length;
+		
+		foreach ( y; iota( miny, maxy ) )
+		{
+			struct X
+			{
+				COORD x;
+				FLAGS flags;
+			}
+
+			X[] xx;
+
+			foreach ( ref line; lines )
+			{
+				// collect x to array
+				if ( y.betweenExcludeB( line.a.y, line.b.y ) )
+				{
+					xx ~= X( line.x( y ), line.flags );
+				}
+			}
+
+			//
+			xx.sort!"a.x < b.x";
+
+			// prepare lines for draw
+			foreach ( ref xxp; xx.chunks( 2 ) )
+			{
+				alines ~=
+					Line(
+						Point( xxp[0].x, y ),
+						Point( xxp[1].x, y )
+					);
+			}
+		}
 
 		// draw
-		drawLines( lines, color );
+		drawLines( alines, color );
 	}
+}
+
+
+pragma( inline, true )
+auto between( T )( T x, T a, T b )
+{
+	return 
+		( a <= x ) && ( x <= b );
+}
+
+
+pragma( inline, true )
+auto betweenExcludeB( T )( T x, T a, T b )
+{
+	return 
+		( a <= x ) && ( x < b );
 }
 
 
