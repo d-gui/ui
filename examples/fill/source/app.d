@@ -476,7 +476,8 @@ struct VPolygon3
 	{
 		NONE = 0b0000_0000,
 		DOWN = 0b0000_0001,
-		HOLE = 0b0000_0010
+		HOLE = 0b0000_0010,
+		CW   = 0b0000_0100, // clock-wise
 	}
 
 	struct SCLine
@@ -556,6 +557,7 @@ struct VPolygon3
 			}
 
 			X[] xx;
+			xx.reserve( lines.length );
 
 			foreach ( ref line; lines )
 			{

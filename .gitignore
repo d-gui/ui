@@ -1,3 +1,8 @@
 # Specify filepatterns you want git to ignore.
 
 deps/
+dub.selections.json
+.dub/
+bin/*
+lib/*
+

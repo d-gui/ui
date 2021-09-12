@@ -17,24 +17,39 @@ void drawLine( int x, int y, int x2, int y2, uint rgba )
     );
 }
 
+struct Viewport
+{
+    uint x;
+    uint y;
+    uint w;
+    uint h;
+}
+
 void drawLine( int x, int y, int x2, int y2, ubyte r, ubyte g, ubyte b, ubyte a )
 {
-    int viewportWidth  = 800;
-    int viewportHeight = 600;
-    float windowedViewportCenterX = cast( GLfloat ) viewportWidth  / 2;
-    float windowedViewportCenterY = cast( GLfloat ) viewportHeight / 2;
+    Viewport viewport;
+    viewport.w = 800;
+    viewport.h = 600;
+
+    drawLine( viewport, x, y, x2, y2, r, g, b, a );
+}
+
+void drawLine( Viewport viewport, int x, int y, int x2, int y2, ubyte r, ubyte g, ubyte b, ubyte a )
+{
+    float windowedViewportCenterX = cast( GLfloat ) viewport.w  / 2;
+    float windowedViewportCenterY = cast( GLfloat ) viewport.h / 2;
 
     //
     pragma( inline, true )
     auto deviceX( int windowedX )
     {
-        return ( cast( GLfloat ) windowedX - windowedViewportCenterX ) / viewportWidth * 2;
+        return ( cast( GLfloat ) windowedX - windowedViewportCenterX ) / viewport.w * 2;
     }
 
     pragma( inline, true )
     auto deviceY( int windowedY )
     {
-        return -( cast( GLfloat ) windowedY - windowedViewportCenterY ) / viewportHeight * 2;
+        return -( cast( GLfloat ) windowedY - windowedViewportCenterY ) / viewport.h * 2;
     }
 
     //

@@ -1,10 +1,11 @@
 {
-	"name"        : "line",
-	"description" : "drawing line functions",
+	"name"        : "ttf",
+	"description" : "TTF loader",
 	"copyright"   : "Copyright © 2021, Vitaliy Fadeev",
 	"authors"     : [ "Vitaliy Fadeev" ],
 	"license"     : "GPL3",
-    "targetType"  : "library",
+    "-targetType"  : "library",
+    "targetType"  : "executable",
     "configurations": 
     [
         {
@@ -12,9 +13,7 @@
             "platforms"   : [ "linux" ],
 			"dependencies":
 			{
-	            "ui:gl3" : { "path" : ".." }
 			},
-			"versions"    : [ "GLFW", "GL3" ],
 		},
 	]
 }
