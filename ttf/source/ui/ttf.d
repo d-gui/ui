@@ -21,7 +21,10 @@ struct TTF
     HeadTable[1]         headTable;
     MaxpTable[1]         maxpTable;
     LocaTable[]          locaTable;
-    TableDirectoryRec[] tableRecs;
+    HheaTable[1]         hheaTable;
+    HmtxTable[1]         hmtxTable;
+    NameTable[1]         nameTable;
+    TableDirectoryRec[]  tableRecs;
 
 
     void readFile()
@@ -72,6 +75,7 @@ struct TTF
     void readEachTable( ref File f )
     {
         uint32 locaOffset;
+        uint32 hmtxOffset;
 
         foreach ( ref tableRec; tableRecs )
         {
@@ -113,17 +117,35 @@ struct TTF
                         readMaxpTable( f, offset );
                         break;
 
+                    case Tag!"hhea":
+                        readHheaTable( f, offset );
+                        break;
+
+                    case Tag!"hmtx":
+                        // after hhea, maxp
+                        hmtxOffset = offset;
+                        break;
+
+                    case Tag!"name":
+                        readNameTable( f, offset );
+                        break;
+
                     default:
                 }
             }
         }
 
-        // depend from maxo, head
-        readLocaTable( f, locaOffset );
+        // depend from maxp, head
+        if ( locaOffset )
+            readLocaTable( f, locaOffset );
+
+        // depend from hhea, maxp
+        if ( hmtxOffset )
+            readHmtxTable( f, hmtxOffset );
 
         // depend from loca, glyf
         ushort charCode = 'A';
-        findGlyfFormat4( charCode, selectedCmapTable.format4 );
+        //findGlyfFormat4( charCode, selectedCmapTable.format4, locaTable );
     }
 
 
@@ -645,10 +667,109 @@ version (1)
             writefln( "    maxComponentDepth     : 0x%x", maxComponentDepth );
         }
     }
+
+
+    void readHheaTable( ref File f, uint32 offset )
+    {
+        f.seek( offset );
+        f.rawRead( hheaTable );
+
+        with ( hheaTable.ptr )
+        {
+            version ( LittleEndian ) 
+            {
+                version_              = version_.swapEndian;
+                ascent                = ascent.swapEndian; 
+                descent               = descent.swapEndian; 
+                lineGap               = lineGap.swapEndian; 
+                advanceWidthMax       = advanceWidthMax.swapEndian; 
+                minLeftSideBearing    = minLeftSideBearing.swapEndian; 
+                minRightSideBearing   = minRightSideBearing.swapEndian; 
+                xMaxExtent            = xMaxExtent.swapEndian; 
+                caretSlopeRise        = caretSlopeRise.swapEndian; 
+                caretSlopeRun         = caretSlopeRun.swapEndian; 
+                caretOffset           = caretOffset.swapEndian; 
+                reserved              = reserved.swapEndian; 
+                reserved2             = reserved2.swapEndian; 
+                reserved3             = reserved3.swapEndian; 
+                reserved4             = reserved4.swapEndian; 
+                metricDataFormat      = metricDataFormat.swapEndian; 
+                numOfLongHorMetrics   = numOfLongHorMetrics.swapEndian; 
+            }
+
+            writefln( "  head:" );
+            writefln( "    version             : 0x%x", version_ );
+            writefln( "    ascent              : 0x%x", ascent );
+            writefln( "    descent             : 0x%x", descent );
+            writefln( "    lineGap             : 0x%x", lineGap );
+            writefln( "    advanceWidthMax     : 0x%x", advanceWidthMax );
+            writefln( "    minLeftSideBearing  : 0x%x", minLeftSideBearing );
+            writefln( "    minRightSideBearing : 0x%x", minRightSideBearing );
+            writefln( "    xMaxExtent          : 0x%x", xMaxExtent );
+            writefln( "    caretSlopeRise      : 0x%x", caretSlopeRise );
+            writefln( "    caretSlopeRun       : 0x%x", caretSlopeRun );
+            writefln( "    caretOffset         : 0x%x", caretOffset );
+            writefln( "    reserved            : 0x%x", reserved );
+            writefln( "    reserved2           : 0x%x", reserved2 );
+            writefln( "    reserved3           : 0x%x", reserved3 );
+            writefln( "    reserved4           : 0x%x", reserved4 );
+            writefln( "    metricDataFormat    : 0x%x", metricDataFormat );
+            writefln( "    numOfLongHorMetrics : 0x%x", numOfLongHorMetrics );
+        }
+    }
+
+
+    // after hhea, maxp
+    void readHmtxTable( ref File f, uint32 offset )
+    {
+        f.seek( offset );
+
+        hmtxTable.ptr.hMetrics.length = hheaTable.ptr.numOfLongHorMetrics;
+        f.rawRead( hmtxTable.ptr.hMetrics );
+
+        hmtxTable.ptr.leftSideBearing.length = maxpTable.ptr.numGlyphs - hheaTable.ptr.numOfLongHorMetrics;
+        f.rawRead( hmtxTable.ptr.leftSideBearing );
+
+        with ( hmtxTable.ptr )
+        {
+            version ( LittleEndian ) 
+            {
+                foreach ( ref e; hMetrics )
+                {
+                    e.advanceWidth    = e.advanceWidth.swapEndian;
+                    e.leftSideBearing = e.leftSideBearing.swapEndian;
+                }
+                foreach ( ref e; leftSideBearing )
+                {
+                    e = e.swapEndian;
+                }
+            }
+
+            //writefln( "    numOfLongHorMetrics : 0x%x", numOfLongHorMetrics );
+        }
+    }
+
+
+    // after hhea, maxp
+    void readNameTable( ref File f, uint32 offset )
+    {
+        f.seek( offset );
+        f.rawRead( nameTable );
+
+        with ( nameTable.ptr )
+        {
+            version ( LittleEndian ) 
+            {
+                //
+            }
+
+            //writefln( "    numOfLongHorMetrics : 0x%x", numOfLongHorMetrics );
+        }
+    }
 }
 
 
-auto findGlyfFormat4( in ushort charCode, in ref CmapFormat4 table )
+auto findGlyfFormat4( in ushort charCode, in ref CmapFormat4 table, in ref LocaTable[] locaTable )
 {
     // Search charcode in array endCode
     auto i =

@@ -553,3 +553,71 @@ struct MaxpTableOpenType
     Fixed  version_;              // 0x00010000 (1.0)
     uint16 numGlyphs;             // the number of glyphs in the font
 }
+
+
+struct HheaTable
+{
+    Fixed  version_;            // 0x00010000 (1.0)
+    FWord  ascent;              // Distance from baseline of highest ascender
+    FWord  descent;             // Distance from baseline of lowest descender
+    FWord  lineGap;             // typographic line gap
+    uFWord advanceWidthMax;     // must be consistent with horizontal metrics
+    FWord  minLeftSideBearing;  // must be consistent with horizontal metrics
+    FWord  minRightSideBearing; // must be consistent with horizontal metrics
+    FWord  xMaxExtent;          // max(lsb + (xMax-xMin))
+    int16  caretSlopeRise;      // used to calculate the slope of the caret (rise/run) set to 1 for vertical caret
+    int16  caretSlopeRun;       // 0 for vertical
+    FWord  caretOffset;         // set value to 0 for non-slanted fonts
+    int16  reserved;            // set value to 0
+    int16  reserved2;           // set value to 0
+    int16  reserved3;           // set value to 0
+    int16  reserved4;           // set value to 0
+    int16  metricDataFormat;    // 0 for current format
+    uint16 numOfLongHorMetrics; // number of advance widths in metrics table    
+}
+
+
+struct LongHorMetric
+{
+    uint16 advanceWidth;
+    int16  leftSideBearing;
+}
+
+
+struct HmtxTable
+{
+    // hhea.numOfLongHorMetrics elements
+    LongHorMetric[] hMetrics;        // The value numOfLongHorMetrics comes from the 'hhea' table. If the font is monospaced, only one entry need be in the array but that entry is required.
+    FWord[]         leftSideBearing; // Here the advanceWidth is assumed to be the same as the advanceWidth for the last entry above. The number of entries in this array is derived from the total number of glyphs minus numOfLongHorMetrics. This generally is used with a run of monospaced glyphs (e.g. Kanji fonts or Courier fonts). Only one run is allowed and it must be at the end.
+}
+
+
+struct NameTable
+{
+    UInt16       format;       // Format selector. Set to 0.
+    UInt16       count;        // The number of nameRecords in this name table.
+    UInt16       stringOffset; // Offset in bytes to the beginning of the name character strings.
+    NameRecord[] nameRecord;   // The name records array.
+    //variable     name;         // Character strings. The character strings of the names. Note that these are not necessarily ASCII!
+}
+
+
+struct NameRecord
+{
+    UInt16 platformID;         // Platform identifier code.
+    UInt16 platformSpecificID; // Platform-specific encoding identifier.
+    UInt16 languageID;         // Language identifier.
+    UInt16 nameID;             // Name identifier.
+    UInt16 length;             // Name string length in bytes.
+    UInt16 offset;             // Name string offset in bytes from stringOffset.
+}
+
+
+enum PlatformIdentifier
+{
+    Unicode   = 0, // Indicates Unicode version.
+    Macintosh = 1, // QuickDraw Script Manager code.
+    reserved  = 2, // (reserved; do not use)
+    Microsoft = 3, // Microsoft encoding.
+}
+
