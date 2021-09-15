@@ -602,6 +602,14 @@ struct NameTable
 }
 
 
+struct NameTableShort
+{
+    UInt16       format;       // Format selector. Set to 0.
+    UInt16       count;        // The number of nameRecords in this name table.
+    UInt16       stringOffset; // Offset in bytes to the beginning of the name character strings.
+}
+
+
 struct NameRecord
 {
     UInt16 platformID;         // Platform identifier code.

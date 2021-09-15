@@ -754,15 +754,31 @@ version (1)
     void readNameTable( ref File f, uint32 offset )
     {
         f.seek( offset );
-        f.rawRead( nameTable );
+        f.rawRead( ( cast( NameTableShort* ) nameTable.ptr )[ 0 .. 1 ] );
 
         with ( nameTable.ptr )
         {
             version ( LittleEndian ) 
             {
-                //
+                count        = count.swapEndian;
+                stringOffset = stringOffset.swapEndian;
             }
 
+            nameRecord.length = count;
+            f.rawRead( nameRecord );
+
+            version ( LittleEndian ) 
+            {
+                foreach ( ref rec; nameRecord )
+                {
+                    rec.platformID         = rec.platformID.swapEndian;
+                    rec.platformSpecificID = rec.platformSpecificID.swapEndian;
+                    rec.languageID         = rec.languageID.swapEndian;
+                    rec.nameID             = rec.nameID.swapEndian;
+                    rec.length             = rec.length.swapEndian;
+                    rec.offset             = rec.offset.swapEndian;
+                }
+            }
             //writefln( "    numOfLongHorMetrics : 0x%x", numOfLongHorMetrics );
         }
     }
