@@ -5,17 +5,8 @@ import deps.gl3;
 import ui.shaders  : linearShader;
 import ui.vertex   : LinearVertex;
 import ui.glerrors : checkGlError;
+import std.stdio : writeln;
 
-
-void drawLine( int x, int y, int x2, int y2, uint rgba )
-{
-    drawLine( x, y, x2, y2, 
-        ( rgba >> 24 ) & 0xFF,
-        ( rgba >> 16 ) & 0xFF,
-        ( rgba >>  8 ) & 0xFF,
-        ( rgba       ) & 0xFF 
-    );
-}
 
 struct Viewport
 {
@@ -25,51 +16,57 @@ struct Viewport
     uint h;
 }
 
-void drawLine( int x, int y, int x2, int y2, ubyte r, ubyte g, ubyte b, ubyte a )
+pragma( inline, true )
+auto deviceX( int windowed_x, int viewport_w )
+{
+    const int short_size = short.max - short.min;
+    return 
+        cast( GLshort ) ( cast( int ) short_size * windowed_x / viewport_w - short_size/2 );
+}
+
+pragma( inline, true )
+auto deviceY( int windowed_y, int viewport_h )
+{
+    const int short_size = short.max - short.min;
+    return 
+        cast( GLshort ) -( cast( int ) short_size * windowed_y / viewport_h - short_size/2 );
+}
+
+
+void drawLine( int x, int y, int x2, int y2, uint abgr )
 {
     Viewport viewport;
     viewport.w = 800;
     viewport.h = 600;
 
-    drawLine( viewport, x, y, x2, y2, r, g, b, a );
-}
-
-void drawLine( Viewport viewport, int x, int y, int x2, int y2, ubyte r, ubyte g, ubyte b, ubyte a )
-{
-    float windowedViewportCenterX = cast( GLfloat ) viewport.w  / 2;
-    float windowedViewportCenterY = cast( GLfloat ) viewport.h / 2;
-
     //
-    pragma( inline, true )
-    auto deviceX( int windowedX )
+    GLshort GL_x = deviceX( x, viewport.w );
+    GLshort GL_y = deviceY( y, viewport.h );
+
+    GLshort GL_x2 = deviceX( x2, viewport.w );
+    GLshort GL_y2 = deviceY( y2, viewport.h );
+
+    struct Color
     {
-        return ( cast( GLfloat ) windowedX - windowedViewportCenterX ) / viewport.w * 2;
+        union
+        {
+            uint abgr;
+            struct
+            {
+                ubyte a, b, g, r;
+            }
+            ubyte[4] bytes;
+        }
     }
 
-    pragma( inline, true )
-    auto deviceY( int windowedY )
-    {
-        return -( cast( GLfloat ) windowedY - windowedViewportCenterY ) / viewport.h * 2;
-    }
-
-    //
-    GLfloat GL_x = deviceX( x );
-    GLfloat GL_y = deviceY( y );
-
-    GLfloat GL_x2 = deviceX( x2 );
-    GLfloat GL_y2 = deviceY( y2 );
-
-    //printf( "x,  y  : %d, %d\n", x,  y );
-    //printf( "x2, y2 : %d, %d\n", x2, y2 );
-    //printf( "x,  y  : %f, %f\n", GL_x,  GL_y );
-    //printf( "x2, y2 : %f, %f\n", GL_x2, GL_y2 );
+    auto c = Color(abgr);
 
     //
     alias TVertex = LinearVertex;
     TVertex[2] vertices =
     [
-        TVertex( GL_x,  GL_y,  cast( GLfloat ) r/255, cast( GLfloat ) g/255, cast( GLfloat ) b/255, cast( GLfloat ) a/255 ), // start
-        TVertex( GL_x2, GL_y2, cast( GLfloat ) r/255, cast( GLfloat ) g/255, cast( GLfloat ) b/255, cast( GLfloat ) a/255 ), // end
+        TVertex( GL_x,  GL_y,  [c.r, c.g, c.b, c.a] ), // start
+        TVertex( GL_x2, GL_y2, [0xff, 0xff, 0xff, 0xff] ), // end
     ];
 
     // Init code
@@ -99,26 +96,26 @@ void drawLine( Viewport viewport, int x, int y, int x2, int y2, ubyte r, ubyte g
     // glUniformMatrix3fv( projection_uloc, 1, GL_FALSE, cast(float*) &projection );
 
     // Describe array
-    int aPosition = glGetAttribLocation( linearShader, "aPosition" );
-    glEnableVertexAttribArray( aPosition ); checkGlError( "glEnableVertexAttribArray" );
+    auto aPosition = glGetAttribLocation( linearShader, "aPosition" ); checkGlError( "glGetAttribLocation" );
+    glEnableVertexAttribArray( aPosition ); checkGlError( "glEnableVertexAttribArray 1" );
     glVertexAttribPointer(
-        /*location*/ aPosition, 
+        /*location*/     aPosition, 
         /*num elements*/ 2, 
-        /*base type*/ GL_FLOAT, 
-        /*normalized*/ GL_FALSE,
-        TVertex.sizeof, 
+        /*base type*/    GL_SHORT,
+        /*normalized*/   GL_TRUE,
+        /*stride*/       TVertex.sizeof, 
         cast( void* ) TVertex.x.offsetof
     ); checkGlError( "glVertexAttribPointer 1" );
 
-    int aColor = glGetAttribLocation( linearShader, "aColor" );
-    glEnableVertexAttribArray( aColor ); checkGlError( "glEnableVertexAttribArray" );
+    auto aColor = glGetAttribLocation( linearShader, "aColor" ); checkGlError( "glGetAttribLocation" );
+    glEnableVertexAttribArray( aColor ); checkGlError( "glEnableVertexAttribArray 2" );
     glVertexAttribPointer(
-        /*location*/ aColor, 
+        /*location*/     aColor, 
         /*num elements*/ 4, 
-        /*base type*/ GL_FLOAT, 
-        /*normalized*/ GL_FALSE,
-        TVertex.sizeof, 
-        cast( void* ) TVertex.r.offsetof
+        /*base type*/    GL_UNSIGNED_BYTE, 
+        /*normalized*/   GL_TRUE,
+        /*stride*/       TVertex.sizeof, 
+        cast( void* ) TVertex.color.offsetof
     ); checkGlError( "glVertexAttribPointer 2" );
 
     // Drawing code (in render loop)
@@ -129,7 +126,11 @@ void drawLine( Viewport viewport, int x, int y, int x2, int y2, ubyte r, ubyte g
     glBindVertexArray( vao ); checkGlError( "glBindVertexArray" );
 
     // Draw
-    glDrawArrays( GL_LINES, /*first*/ 0, /*count*/ cast( int ) vertices.length ); checkGlError( "glDrawArrays" );
+    glDrawArrays( 
+        GL_LINES, 
+        /*first*/ 0, 
+        /*count*/ cast( int ) vertices.length 
+    ); checkGlError( "glDrawArrays" );
 
     // Free
     glBindBuffer( GL_ARRAY_BUFFER, 0 );

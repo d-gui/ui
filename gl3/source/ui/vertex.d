@@ -15,8 +15,8 @@ struct Vertex5
 // Image Vertex
 struct LinearVertex
 {
-    GLfloat x, y;
-    GLfloat r, g, b, a;
+    GLshort x, y;       // 4byte
+    GLubyte[4] color;   // 4byte
 }
 struct TextVertex
 {
